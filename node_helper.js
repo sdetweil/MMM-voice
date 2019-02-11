@@ -228,7 +228,8 @@ module.exports = NodeHelper.create({
         this.ps = new Psc({
             setId: this.name,
             verbose: true,
-            microphone: this.config.microphone
+            microphone: this.config.microphone,
+            autostart: false  // added after mic sharing support added
         });
 
         this.ps.on('data', this.handleData.bind(this));
@@ -238,6 +239,8 @@ module.exports = NodeHelper.create({
         }
 
         this.ps.on('error', this.logError.bind(this));
+        
+        this.ps.startListening();  		// added after mic sharing support added 
 
         this.sendSocketNotification('READY');
     },
