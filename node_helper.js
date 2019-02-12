@@ -248,7 +248,7 @@ module.exports = NodeHelper.create({
         
         // added for mic sharing, make sure the library provides the required functions
         if(typeof this.ps.startListening != 'function')
-          console.log("downlevel pocketsphinx-continuous node module... error<===============================');
+          console.log("downlevel pocketsphinx-continuous node module... error<===============================");
         //this.ps.startListening();  		// added after mic sharing support added, don't need to call it, 
                                         // default is behave like in the past, 
                                         // if autostart: false used above, need to call to start listening sometime        
