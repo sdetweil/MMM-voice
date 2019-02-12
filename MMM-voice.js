@@ -53,7 +53,7 @@ Module.register('MMM-voice', {
             'SHOW MODULES',
             'WAKE UP',
             'GO TO SLEEP',
-            'GO ONLINE',
+            'GO ONLINE',        // add new command
             'OPEN HELP',
             'CLOSE HELP'
         ]
@@ -179,6 +179,7 @@ Module.register('MMM-voice', {
             if (Object.prototype.hasOwnProperty.call(payload, 'mode') && Object.prototype.hasOwnProperty.call(payload, 'sentences')) {
                 this.modules.push(payload);
             }
+// add handlers for notifications from other modules
         } else if(notification === 'HOTWORD_RESUME'){
             this.icon = 'fa-microphone';
             this.pulsing=false;
@@ -208,12 +209,13 @@ Module.register('MMM-voice', {
             this.pulsing = false;
         } else if (notification === 'ERROR') {
             this.mode = notification;
+/// new handler for detected 'go online' in node_helper
         } else if (notification === 'SUSPENDED') {
-            Log.log("sending notification for HOTWORD_RESUME")
             this.icon='fa-microphone-slash'
             this.pulsing = false;
+// tell other module to resume voice detection
             this.sendNotification('HOTWORD_RESUME')
-            setTimeout(() => {
+            setTimeout(() => {                        // dummy code here for response from other module when done
                     Log.log("sending socket notification to RESUME_LISTENING")
                     this.notificationReceived('HOTWORD_RESUME');
                 }, 10000);

@@ -278,7 +278,6 @@ module.exports = NodeHelper.create({
             }
 
             let cleanData = this.cleanData(data);
-console.log("clean data ="+cleanData);
             for (let i = 0; i < this.modules.length; i += 1) {
                 const n = cleanData.indexOf(this.modules[i].mode);
                 if (n === 0) {                    
@@ -287,8 +286,6 @@ console.log("clean data ="+cleanData);
                     break;
                 }
             }
-            this.mode='VOICE';
-console.log("mode="+this.mode+" cleaned data ="+cleanData);
             if (this.mode) {
                 this.sendSocketNotification('VOICE', { mode: this.mode, sentence: cleanData });
                 if (this.mode === 'VOICE') {
@@ -352,7 +349,6 @@ console.log("mode="+this.mode+" cleaned data ="+cleanData);
      * @param {string} data - Recognized data
      */
     checkCommands(data) {
-        console.log(" checking for online in '"+data+"'")
         if (bytes.r[0].test(data) && bytes.r[1].test(data)) {
             this.sendSocketNotification('BYTES', bytes.a);
         } else if (/(WAKE)/g.test(data) && /(UP)/g.test(data)) {
@@ -360,8 +356,7 @@ console.log("mode="+this.mode+" cleaned data ="+cleanData);
             this.hdmi = true;
         } else if (/(GO)/g.test(data) && /(ONLINE)/g.test(data)) { 
             if(this.ps.isListening())
-              this.ps.stopListening();
-            console.log("sending socket notification, have released mic");  
+              this.ps.stopListening(); 
             this.sendSocketNotification('SUSPENDED');
         } else if (/(GO)/g.test(data) && /(SLEEP)/g.test(data)) {
             exec('/opt/vc/bin/tvservice -o', null);
