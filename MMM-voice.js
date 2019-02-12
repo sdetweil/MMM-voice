@@ -53,6 +53,7 @@ Module.register('MMM-voice', {
             'SHOW MODULES',
             'WAKE UP',
             'GO TO SLEEP',
+            'GO ONLINE',
             'OPEN HELP',
             'CLOSE HELP'
         ]
@@ -178,6 +179,13 @@ Module.register('MMM-voice', {
             if (Object.prototype.hasOwnProperty.call(payload, 'mode') && Object.prototype.hasOwnProperty.call(payload, 'sentences')) {
                 this.modules.push(payload);
             }
+        } else if(notification === 'HOTWORD_RESUME'){
+            this.icon = 'fa-microphone';
+            this.pulsing=false;
+            this.updateDom();
+            this.sendSocketNotification('RESUME_LISTENING');
+        } else if(notification === 'HOTWORD_PAUSE'){   
+            this.sendSocketNotification('SUSPEND_LISTENING');
         }
     },
 
@@ -200,6 +208,15 @@ Module.register('MMM-voice', {
             this.pulsing = false;
         } else if (notification === 'ERROR') {
             this.mode = notification;
+        } else if (notification === 'SUSPENDED') {
+            Log.log("sending notification for HOTWORD_RESUME")
+            this.icon='fa-microphone-slash'
+            this.pulsing = false;
+            this.sendNotification('HOTWORD_RESUME')
+            setTimeout(() => {
+                    Log.log("sending socket notification to RESUME_LISTENING")
+                    this.notificationReceived('HOTWORD_RESUME');
+                }, 10000);
         } else if (notification === 'VOICE') {
             for (let i = 0; i < this.modules.length; i += 1) {
                 if (payload.mode === this.modules[i].mode) {
