@@ -40,6 +40,9 @@ Module.register('MMM-voice', {
     pulsing: true,
     /** @member {boolean} help - Flag to switch between render help or not. */
     help: false,
+    
+    timeout: null,
+    timeoutSeconds: 10,
 
     /**
      * @member {Object} voice - Defines the default mode and commands of this module.
@@ -181,11 +184,19 @@ Module.register('MMM-voice', {
             }
 // add handlers for notifications from other modules
         } else if(notification === 'HOTWORD_RESUME'){
+            if(this.timeout!=null){
+              cancelTimeout(this.timeout);
+              this.timeout=null;
+            }
             this.icon = 'fa-microphone';
             this.pulsing=false;
             this.updateDom();
             this.sendSocketNotification('RESUME_LISTENING');
-        } else if(notification === 'HOTWORD_PAUSE'){   
+        } else if(notification === 'HOTWORD_PAUSE'){  
+            if(this.timeout!=null){
+              cancelTimeout(this.timeout);
+              this.timeout=null;
+            }        
             this.sendSocketNotification('SUSPEND_LISTENING');
         }
     },
@@ -215,10 +226,10 @@ Module.register('MMM-voice', {
             this.pulsing = false;
 // tell other module to resume voice detection
             this.sendNotification('HOTWORD_RESUME')
-            setTimeout(() => {                        // dummy code here for response from other module when done
+            this.timeout=setTimeout(() => {                        // dummy code here for response from other module when done
                     Log.log("sending socket notification to RESUME_LISTENING")
                     this.notificationReceived('HOTWORD_RESUME');
-                }, 10000);
+                }, this.timeoutSeconds*1000);
         } else if (notification === 'VOICE') {
             for (let i = 0; i < this.modules.length; i += 1) {
                 if (payload.mode === this.modules[i].mode) {
