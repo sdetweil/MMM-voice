@@ -186,7 +186,7 @@ Module.register('MMM-voice', {
         // did some other module  say they were done with the mic
         } else if(notification === 'HOTWORD_RESUME'){
             if(this.timeout!=null){
-              cancelTimeout(this.timeout);
+              clearTimeout(this.timeout);
               this.timeout=null;
             }
             this.icon = 'fa-microphone';
@@ -197,7 +197,7 @@ Module.register('MMM-voice', {
         // this could also be a confirm using the mic from the other module
         } else if(notification === 'HOTWORD_PAUSE'){  
             if(this.timeout!=null){
-              cancelTimeout(this.timeout);
+              clearTimeout(this.timeout);
               this.timeout=null;
             }        
             // if we send the suspend and already not listening, all is ok
