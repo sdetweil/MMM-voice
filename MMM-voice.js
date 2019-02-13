@@ -183,6 +183,7 @@ Module.register('MMM-voice', {
                 this.modules.push(payload);
             }
 // add handlers for notifications from other modules
+        // did some other module  say they were done with the mic
         } else if(notification === 'HOTWORD_RESUME'){
             if(this.timeout!=null){
               cancelTimeout(this.timeout);
@@ -192,11 +193,14 @@ Module.register('MMM-voice', {
             this.pulsing=false;
             this.updateDom();
             this.sendSocketNotification('RESUME_LISTENING');
+        // did some other module request the mic?
+        // this could also be a confirm using the mic from the other module
         } else if(notification === 'HOTWORD_PAUSE'){  
             if(this.timeout!=null){
               cancelTimeout(this.timeout);
               this.timeout=null;
             }        
+            // if we send the suspend and already not listening, all is ok
             this.sendSocketNotification('SUSPEND_LISTENING');
         }
     },
