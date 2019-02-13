@@ -32,6 +32,7 @@
  * @requires external:Log
  * @requires external:MM
  */
+var voice_self;
 Module.register('MMM-voice', {
 
     /** @member {string} icon - Microphone icon. */
@@ -87,6 +88,7 @@ Module.register('MMM-voice', {
         this.mode = this.translate('INIT');
         this.modules.push(this.voice);
         Log.info(`${this.name} is waiting for voice command registrations.`);
+        voice_self=this
     },
 
     /**
@@ -185,23 +187,26 @@ Module.register('MMM-voice', {
 // add handlers for notifications from other modules
         // did some other module  say they were done with the mic
         } else if(notification === 'HOTWORD_RESUME'){
-            if(this.timeout!=null){
-              clearTimeout(this.timeout);
-              this.timeout=null;
+            if( voice_self.timeout!=null){
+              clearTimeout( voice_self.timeout);
+               voice_self.timeout=null;
             }
-            this.icon = 'fa-microphone';
-            this.pulsing=false;
-            this.updateDom();
-            this.sendSocketNotification('RESUME_LISTENING');
+             voice_self.icon = 'fa-microphone';
+             voice_self.pulsing=false;
+             voice_self.updateDom();
+             voice_self.sendSocketNotification('RESUME_LISTENING');
         // did some other module request the mic?
         // this could also be a confirm using the mic from the other module
         } else if(notification === 'HOTWORD_PAUSE'){  
-            if(this.timeout!=null){
-              clearTimeout(this.timeout);
-              this.timeout=null;
+            if( voice_self.timeout!=null){
+              clearTimeout( voice_self.timeout);
+               voice_self.timeout=null;
             }        
+             voice_self.icon='fa-microphone-slash'
+             voice_self.pulsing=false;
+             voice_self.updateDom();
             // if we send the suspend and already not listening, all is ok
-            this.sendSocketNotification('SUSPEND_LISTENING');
+             voice_self.sendSocketNotification('SUSPEND_LISTENING');
         }
     },
 
