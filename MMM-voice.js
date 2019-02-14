@@ -32,7 +32,6 @@
  * @requires external:Log
  * @requires external:MM
  */
-var voice_self;
 Module.register('MMM-voice', {
 
     /** @member {string} icon - Microphone icon. */
@@ -43,29 +42,121 @@ Module.register('MMM-voice', {
     help: false,
     
     timeout: null,
-    timeoutSeconds: 20,
+    timeoutSeconds: 20,    
 
     /**
      * @member {Object} voice - Defines the default mode and commands of this module.
      * @property {string} mode - Voice mode of this module.
      * @property {string[]} sentences - List of voice commands of this module.
      */
+
+
+///////////// Add your commands to the sentences array below ///////////////////
     voice: {
         mode: 'VOICE',
         sentences: [
-            'HIDE MODULES',
-            'SHOW MODULES',
-            'WAKE UP',
-            'GO TO SLEEP',
-            'GO ONLINE',        // add new command
+      'HIDE ALARM',
+      'SHOW ALARM',
+      'HIDE BACKGROUND',
+      'SHOW BACKGROUND',
+      'HIDE CALENDAR',
+      'SHOW CALENDAR',
+      'HIDE CARDS',
+      'SHOW CARDS',
+      'HIDE CENSUS',
+      'SHOW CENSUS',
+      'HIDE CLOCK',
+      'SHOW CLOCK',
+      'HIDE COCKTAILS',
+      'SHOW COCKTAILS',
+      'HIDE COMPLIMENTS',
+      'SHOW COMPLIMENTS',
+      'HIDE COWBOY',
+      'SHOW COWBOY',
+      'HIDE DARWIN',
+      'SHOW DARWIN',
+      'HIDE EARTH',
+      'SHOW EARTH',
+      'HIDE EYECANDY',
+      'SHOW EYECANDY',
+      'HIDE EVENTS',
+      'SHOW EVENTS',
+      'HIDE FAX',
+      'SHOW FAX',
+      'HIDE FLIPPER',
+      'SHOW FLIPPER',
+      'HIDE FLIGHTS',
+      'SHOW FLIGHTS',
+      'HIDE FORTUNE',
+      'SHOW FORTUNE',
+      'HIDE JEOPARDY',
+      'SHOW JEOPARDY',
+      'HIDE LICE',
+      'SHOW LICE',
+      'HIDE LOCATION',
+      'SHOW LOCATION',
+      'HIDE LOTTERY',
+      'SHOW LOTTERY',
+      'HIDE LUCY',
+      'SHOW LUCY',
+      'HIDE MODULES',
+      'SHOW MODULES',
+      'HIDE MOON',
+      'SHOW MOON',
+            'HIDE NASA',
+      'SHOW NASA',
+      'HIDE NEO',
+      'SHOW NEO',
+      'HIDE NEWS',
+      'SHOW NEWS',
+      'HIDE PETFINDER',
+      'SHOW PETFINDER',
+            'HIDE PHONE',
+      'SHOW PHONE',
+      'HIDE PICTURES',
+      'SHOW PICTURES',
+            'HIDE PILOTS',
+      'SHOW PILOTS',
+      'HIDE SHIPPING',
+      'SHOW SHIPPING',
+      'HIDE STATION',
+      'SHOW STATION',
+      'HIDE STATS',
+      'SHOW STATS',
+      'HIDE SUNRISE',
+      'SHOW SUNRISE',
+      'HIDE SUDOKU',
+      'SHOW SUDOKU',
+            'HIDE TIDES',
+      'SHOW TIDES',
+      'HIDE TIMER',
+      'SHOW TIMER',
+      'HIDE TRIVIA',
+      'SHOW TRIVIA',
+      'HIDE VOICE',
+      'SHOW VOICE',
+            'HIDE WEATHER',
+      'SHOW WEATHER',
+      'HIDE PAGE ONE',
+      'SHOW PAGE ONE',
+      'HIDE PAGE TWO',
+      'SHOW PAGE TWO',
+      'HIDE PAGE THREE',
+      'SHOW PAGE THREE',
+      'HIDE PAGE FOUR',
+      'SHOW PAGE FOUR',
+      'PLEASE WAKE UP',
+      'GO TO SLEEP',
+      'GO ONLINE',
             'OPEN HELP',
-            'CLOSE HELP'
+      'CLOSE HELP',
         ]
     },
 
     /** @member {Object[]} modules - Set of all modules with mode and commands. */
     modules: [],
-
+    /** @member {string[]} previouslyHidden - keep list of module identifiers already hidden when sleep occurs */
+    previouslyHidden: [],
     /**
      * @member {Object} defaults - Defines the default config values.
      * @property {int} timeout - Seconds to active listen for commands.
@@ -75,7 +166,9 @@ Module.register('MMM-voice', {
     defaults: {
         timeout: 15,
         keyword: 'MAGIC MIRROR',
-        debug: false
+        debug: false,
+        standByMethod: 'DPMS',
+        startHidden:  true,
     },
 
     /**
@@ -88,7 +181,6 @@ Module.register('MMM-voice', {
         this.mode = this.translate('INIT');
         this.modules.push(this.voice);
         Log.info(`${this.name} is waiting for voice command registrations.`);
-        voice_self=this
     },
 
     /**
@@ -130,6 +222,7 @@ Module.register('MMM-voice', {
         voice.classList.add('small', 'align-left');
 
         const icon = document.createElement('i');
+        Log.error("getDom icon ="+this.icon+" pulse = "+this.pulsing)
         icon.classList.add('fa', this.icon, 'icon');
         if (this.pulsing) {
             icon.classList.add('pulse');
@@ -155,7 +248,7 @@ Module.register('MMM-voice', {
                 }
             }
         }
-
+/////// Edit help screen to fit all commands TO DO @ Mykle ////////////////////////////////
         if (this.help) {
             voice.classList.add(`${this.name}-blur`);
             const modal = document.createElement('div');
@@ -165,9 +258,19 @@ Module.register('MMM-voice', {
         }
 
         wrapper.appendChild(voice);
-
+Log.error("updateDom return")
         return wrapper;
     },
+
+
+ /////////// @ Mykle enhancement ////////////////////
+  /*  notificationReceived: function(notification, payload) {
+        if (notification === 'HIDE_VOICE') {
+            this.hide();
+        }  else if (notification === 'SHOW_VOICE') {
+            this.show(1000);
+        }
+    }, */
 
     /**
      * @function notificationReceived
@@ -188,33 +291,59 @@ Module.register('MMM-voice', {
         // did some other module  say they were done with the mic
         } else if(notification === 'HOTWORD_RESUME'){
             Log.error("HOTWORD_RESUME received from "+(sender!=null?sender.name:"unknown"))
-            Log.error("HOTWORD_RESUME timeout value = "+voice_self.timeout)
-            if( voice_self.timeout!=null){
+            Log.error("HOTWORD_RESUME timeout value = "+this.timeout)
+            if( this.timeout!=null){
               Log.error("HOTWORD_RESUME clearing timeout handle")
-              clearTimeout( voice_self.timeout);
-               voice_self.timeout=null;
+              clearTimeout( this.timeout);
+               this.timeout=null;
             }
-             voice_self.icon = 'fa-microphone';
-             voice_self.pulsing=false;
-             voice_self.updateDom();
-             voice_self.sendSocketNotification('RESUME_LISTENING');
+             this.icon = 'fa-microphone';
+             this.pulsing=false;
+             Log.error("resume updatedom")
+             this.updateDom();
+             this.sendSocketNotification('RESUME_LISTENING');
         // did some other module request the mic?
         // this could also be a confirm using the mic from the other module
         } else if(notification === 'HOTWORD_PAUSE'){ 
             Log.error("HOTWORD_PAUSE received from "+(sender!=null?sender.name:"unknown"))
-            Log.error("HOTWORD_PAUSE timeout value = "+voice_self.timeout)
-            if( voice_self.timeout!=null){
+            Log.error("HOTWORD_PAUSE timeout value = "+this.timeout)
+            if( this.timeout!=null){
               Log.error("HOTWORD_ PAUSE clearing timeout handle")
-              clearTimeout( voice_self.timeout);
-               voice_self.timeout=null;
+              clearTimeout( this.timeout);
+               this.timeout=null;
             }        
-             voice_self.icon='fa-microphone-slash'
-             voice_self.pulsing=false;
-             voice_self.updateDom();
+             this.icon='fa-microphone-slash'
+             this.pulsing=false;
+             Log.error("pause updatedom")
+             this.updateDom(100);
             // if we send the suspend and already not listening, all is ok
-             voice_self.sendSocketNotification('SUSPEND_LISTENING');
+             this.sendSocketNotification('SUSPEND_LISTENING');
         }
+ //   },  // <-- removed }, here when I edited
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////// @ Mykle enhancement //////////////////
+     if(this.config.startHidden) {		
+       if (notification === 'DOM_OBJECTS_CREATED') {
+          MM.getModules().enumerate((module) => {
+               module.hide(1000);
+          });
+        }
+     }
+/////////// @ Mykle enhancement //////////////////
+    if (notification === 'DOM_OBJECTS_CREATED') {
+        if(this.config.startHidden) {
+            this.sendNotification('SHOW_LUCY'); // for showing MMM-EasyPix(Lucy) when MM launches
+            this.show(1000); // for showing MMM-voice when MM launches
+            this.sendNotification('HELLO_LUCY');
+        }
+    }
+
+
     },
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * @function socketNotificationReceived
@@ -226,12 +355,15 @@ Module.register('MMM-voice', {
      */
     socketNotificationReceived(notification, payload) {
         if (notification === 'READY') {
+         Log.error("received Ready notification")
             this.icon = 'fa-microphone';
-            this.mode = this.translate('NO_MODE');
+            this.mode = this.translate('NO_MODE'); // <-- was 'NO_MODE' @Mykle
             this.pulsing = false;
         } else if (notification === 'LISTENING') {
+          Log.error("received Listening notification")
             this.pulsing = true;
         } else if (notification === 'SLEEPING') {
+          Log.error("received Sleeping notification")
             this.pulsing = false;
         } else if (notification === 'ERROR') {
             this.mode = notification;
@@ -239,13 +371,17 @@ Module.register('MMM-voice', {
         } else if (notification === 'SUSPENDED') {
             this.icon='fa-microphone-slash'
             this.pulsing = false;
+            this.debugInformation=" ";
+            Log.error("suspend updatedom")
+            this.updateDom(100);
 // tell other module to resume voice detection
-            this.sendNotification('HOTWORD_RESUME')
             this.timeout=setTimeout(() => {                        // dummy code here for response from other module when done
                     Log.log("timeout sending socket notification to RESUME_LISTENING")
                     this.notificationReceived('HOTWORD_RESUME');
-                }, this.timeoutSeconds*1000);
+                }, this.timeoutSeconds*1000);         
+            this.sendNotification('ASSISTANT_ACTIVATE')
         } else if (notification === 'VOICE') {
+          Log.error("received Voice notification")
             for (let i = 0; i < this.modules.length; i += 1) {
                 if (payload.mode === this.modules[i].mode) {
                     if (this.mode !== payload.mode) {
@@ -261,21 +397,559 @@ Module.register('MMM-voice', {
             }
         } else if (notification === 'BYTES') {
             this.sendNotification('MMM-TTS', payload);
-        } else if (notification === 'HIDE') {
+        } else if (notification === 'HIDE_MODULES') {
             MM.getModules().enumerate((module) => {
                 module.hide(1000);
             });
-        } else if (notification === 'SHOW') {
+            this.sendNotification('STAND_BY', { status: true, modules: [] });
+        } else if (notification === 'SHOW_MODULES') {
             MM.getModules().enumerate((module) => {
                 module.show(1000);
             });
-        } else if (notification === 'OPEN_HELP') {
-            this.help = true;
-        } else if (notification === 'CLOSE_HELP') {
-            this.help = false;
-        } else if (notification === 'DEBUG') {
+            this.sendNotification('STAND_BY', { status: false });
+       } else if (notification === 'STAND_BY_ACTION') {
+            if (payload.type === 'show') {
+                if (payload.hardware === false) {
+                    MM.getModules().enumerate((module) => {
+                        if (this.previouslyHidden.includes(module.identifier)) {
+                            module.show(1000);
+                        }
+                    });
+                    this.previouslyHidden = [];
+                }
+
+                this.sendNotification('STAND_BY', { status: false });
+            } else if (payload.type === 'hide') {
+                if (payload.hardware === false) {
+                    MM.getModules().enumerate((module) => {
+                        if (module.hidden === true) {
+                            this.previouslyHidden.push(module.identifier);
+                        } else {
+                            module.hide(1000);
+                        }
+                    });
+                }
+
+                this.sendNotification('STAND_BY', { status: true, modules: this.previouslyHidden.slice(0) });
+            }
+       }
+/*
+
+    if (notification === 'DOM_OBJECTS_CREATED') {
+         MM.getModules().enumerate((module) => {
+                module.hide(1000);
+            });
+     }
+
+
+*/
+
+//////////// PAGES BY VOICE COMMAND @ Mykle  ///////////////////////////////////////	
+     else if (notification === 'SHOW_PAGE_ONE') {
+       this.sendNotification('HIDE_LUCY');
+       this.sendNotification('HIDE_PAGE_TWO');
+       this.sendNotification('HIDE_PAGE_THREE');
+       this.sendNotification('SHOW_LOTTERY');
+       this.sendNotification('SHOW_CLOCK');
+       this.sendNotification('SHOW_EARTH');
+       this.sendNotification('SHOW_EYECANDY');
+       this.sendNotification('SHOW_LICE');
+       this.sendNotification('SHOW_COWBOY');
+       this.sendNotification('SHOW_TIDES');
+       this.sendNotification('SHOW_VOICE');
+
+     } else if (notification === 'HIDE_PAGE_ONE') {
+       this.sendNotification('HIDE_LUCY');
+       this.sendNotification('HIDE_LOTTERY');
+       this.sendNotification('HIDE_CLOCK');
+       this.sendNotification('HIDE_EARTH');
+       this.sendNotification('HIDE_EYECANDY');
+       this.sendNotification('HIDE_LICE');
+       this.sendNotification('HIDE_COWBOY');
+       this.sendNotification('HIDE_TIDES');
+       this.sendNotification('HIDE_VOICE');
+///////////////////////////////////////////////////////////////////////////////////////////////			
+     } else if (notification === 'SHOW_PAGE_TWO') {
+       this.sendNotification('HIDE_LUCY');
+       this.sendNotification('HIDE_PAGE_ONE');
+       this.sendNotification('HIDE_PAGE_THREE');
+       this.sendNotification('SHOW_PILOTS');
+       this.sendNotification('SHOW_MOON');
+       this.sendNotification('SHOW_NASA');
+       this.sendNotification('SHOW_ALARM');
+       this.sendNotification('SHOW_COCKTAILS');
+       this.sendNotification('SHOW_WEATHER');
+       this.sendNotification('SHOW_VOICE');
+
+    } else if (notification === 'HIDE_PAGE_TWO') {
+       this.sendNotification('HIDE_LUCY');
+       this.sendNotification('HIDE_PILOTS');
+       this.sendNotification('HIDE_MOON');
+       this.sendNotification('HIDE_NASA');
+       this.sendNotification('HIDE_ALARM');
+       this.sendNotification('HIDE_COCKTAILS');
+       this.sendNotification('HIDE_WEATHER');
+       this.sendNotification('HIDE_VOICE');
+////////////////////////////////////////////////////////////////////////////////////////////////
+    } else if (notification === 'SHOW_PAGE_THREE') {
+       this.sendNotification('HIDE_LUCY');
+       this.sendNotification('HIDE_PAGE_ONE');
+       this.sendNotification('HIDE_PAGE_TWO');
+       this.sendNotification('SHOW_BACKGROUND');
+       this.sendNotification('SHOW_CALENDAR');
+       this.sendNotification('SHOW_COMPLIMENTS');
+       this.sendNotification('SHOW_DARWIN');
+       this.sendNotification('SHOW_FLIPPER');
+       this.sendNotification('SHOW_NEWS');
+       this.sendNotification('SHOW_PICTURES');
+
+    } else if (notification === 'HIDE_PAGE_THREE') {
+       this.sendNotification('HIDE_LUCY');
+       this.sendNotification('HIDE_BACKGROUND');
+       this.sendNotification('HIDE_CALENDAR');
+       this.sendNotification('HIDE_COMPLIMENTS');
+       this.sendNotification('HIDE_DARWIN');
+       this.sendNotification('HIDE_FLIPPER');
+       this.sendNotification('HIDE_NEWS');
+       this.sendNotification('HIDE_PICTURES');
+      ///////////////////////////////////////////////////////////////////////////////////////////////			
+     } else if (notification === 'SHOW_PAGE_FOUR') {
+       this.sendNotification('HIDE_LUCY');
+       this.sendNotification('HIDE_PAGE_ONE');
+       this.sendNotification('HIDE_PAGE_THREE');
+       this.sendNotification('SHOW_STATS');
+       this.sendNotification('SHOW_FAX');
+       this.sendNotification('SHOW_NASA');
+       this.sendNotification('SHOW_ALARM');
+       this.sendNotification('SHOW_COCKTAILS');
+       this.sendNotification('SHOW_WEATHER');
+       this.sendNotification('SHOW_VOICE');
+
+    } else if (notification === 'HIDE_PAGE_FOUR') {
+       this.sendNotification('HIDE_LUCY');
+       this.sendNotification('HIDE_STATS');
+       this.sendNotification('HIDE_FAX');
+       this.sendNotification('HIDE_NASA');
+       this.sendNotification('HIDE_ALARM');
+       this.sendNotification('HIDE_COCKTAILS');
+       this.sendNotification('HIDE_WEATHER');
+       this.sendNotification('HIDE_VOICE');
+////////////////////////////////////////////////////////////////////////////////////////////////
+    }
+
+
+/////////// SINGULAR VOICE COMMANDS @ Mykle ///////////////////////////////////		
+
+        // You have to add your UNIQUE commands like this
+
+    // MMM-voice sends notification to MMM-AlarmClock to HIDE
+        else if (notification === 'HIDE_ALARM') {
+             this.sendNotification('HIDE_ALARM');
+        }
+
+        // MMM-voice sends notification to MMM-AlarmClock to SHOW
+        else if (notification === 'SHOW_ALARM') {
+             this.sendNotification('SHOW_ALARM');
+        }
+
+    // MMM-voice sends notification to MMM-Back to HIDE
+     else if (notification === 'HIDE_BACKGROUND') {
+             this.sendNotification('HIDE_BACKGROUND');
+        }
+
+        // MMM-voice sends notification to MMM-Back to SHOW
+        else if (notification === 'SHOW_BACKGROUND') {
+             this.sendNotification('SHOW_BACKGROUND');
+        }
+
+  // MMM-voice sends notification to calendar to HIDE
+        else if (notification === 'HIDE_CALENDAR') {
+             this.sendNotification('HIDE_CALENDAR');
+        }
+
+        // MMM-voice sends notification to calendar to SHOW
+        else if (notification === 'SHOW_CALENDAR') {
+             this.sendNotification('SHOW_CALENDAR');
+        }
+
+    // MMM-voice sends notification to MMM-CARDS to HIDE
+        else if (notification === 'HIDE_CARDS') {
+             this.sendNotification('HIDE_CARDS');
+        }
+
+        // MMM-voice sends notification to MMM-CARDS to SHOW
+        else if (notification === 'SHOW_CARDS') {
+             this.sendNotification('SHOW_CARDS');
+        }
+
+    // MMM-voice sends notification to MMM-Census to HIDE
+        else if (notification === 'HIDE_CENSUS') {
+             this.sendNotification('HIDE_CENSUS');
+        }
+
+        // MMM-voice sends notification to MMM-Census to SHOW
+        else if (notification === 'SHOW_CENSUS') {
+             this.sendNotification('SHOW_CENSUS');
+        }
+
+    // MMM-voice sends notification to MMM-CLOCK to HIDE
+        else if (notification === 'HIDE_CLOCK') {
+             this.sendNotification('HIDE_CLOCK');
+        }
+
+        // MMM-voice sends notification to MMM-CLOCK to SHOW
+        else if (notification === 'SHOW_CLOCK') {
+             this.sendNotification('SHOW_CLOCK');
+        }
+
+    // MMM-voice sends notification to MMM-COCKTAILS to HIDE
+        else if (notification === 'HIDE_COCKTAILS') {
+             this.sendNotification('HIDE_COCKTAILS');
+        }
+
+        // MMM-voice sends notification to MMM-COCKTAILS to SHOW
+        else if (notification === 'SHOW_COCKTAILS') {
+             this.sendNotification('SHOW_COCKTAILS');
+        }
+
+    // MMM-voice sends notification to compliments to HIDE
+        else if (notification === 'HIDE_COMPLIMENTS') {
+             this.sendNotification('HIDE_COMPLIMENTS');
+        }
+
+        // MMM-voice sends notification to compliments to SHOW
+        else if (notification === 'SHOW_COMPLIMENTS') {
+             this.sendNotification('SHOW_COMPLIMENTS');
+        }
+
+    // MMM-voice sends notification to MMM-NOAA to HIDE
+        else if (notification === 'HIDE_COWBOY') {
+             this.sendNotification('HIDE_COWBOY');
+        }
+
+        // MMM-voice sends notification to MMM-NOAA to SHOW
+        else if (notification === 'SHOW_COWBOY') {
+             this.sendNotification('SHOW_COWBOY');
+        }
+
+    // MMM-voice sends notification to MMM-EOL to HIDE
+        else if (notification === 'HIDE_DARWIN') {
+             this.sendNotification('HIDE_DARWIN');
+        }
+
+        // MMM-voice sends notification to MMM-EOL to SHOW
+        else if (notification === 'SHOW_DARWIN') {
+             this.sendNotification('SHOW_DARWIN');
+        }
+
+    // MMM-voice sends notification to MMM-EARTH to HIDE
+        else if (notification === 'HIDE_EARTH') {
+             this.sendNotification('HIDE_EARTH');
+        }
+
+        // MMM-voice sends notification to MMM-EARTH to SHOW
+        else if (notification === 'SHOW_EARTH') {
+             this.sendNotification('SHOW_EARTH');
+        }
+
+     // MMM-voice sends notification to MMM-EyeCandy to HIDE
+        else if (notification === 'HIDE_EYECANDY') {
+             this.sendNotification('HIDE_EYECANDY');
+        }
+
+        // MMM-voice sends notification to MMM-EyeCandy to SHOW
+        else if (notification === 'SHOW_EYECANDY') {
+             this.sendNotification('SHOW_EYECANDY');
+        }
+
+    // MMM-voice sends notification to MMM-Events to HIDE
+        else if (notification === 'HIDE_EVENTS') {
+             this.sendNotification('HIDE_EVENTS');
+        }
+
+        // MMM-voice sends notification to MMM-Events to SHOW
+        else if (notification === 'SHOW_EVENTS') {
+             this.sendNotification('SHOW_EVENTS');
+        }
+
+    // MMM-voice sends notification to MMM-rfacts to HIDE
+        else if (notification === 'HIDE_FAX') {
+             this.sendNotification('HIDE_FAX');
+        }
+
+        // MMM-voice sends notification to MMM-rfacts to SHOW
+        else if (notification === 'SHOW_FAX') {
+             this.sendNotification('SHOW_FAX');
+        }
+
+     // MMM-voice sends notification to MMM-Glock to HIDE
+        else if (notification === 'HIDE_FLIPPER') {
+             this.sendNotification('HIDE_FLIPPER');
+        }
+
+        // MMM-voice sends notification to MMM-Glock to SHOW
+        else if (notification === 'SHOW_FLIPPER') {
+             this.sendNotification('SHOW_FLIPPER');
+        }
+
+     // MMM-voice sends notification to MMM-FlightsAbove to HIDE
+        else if (notification === 'HIDE_FLIGHTS') {
+             this.sendNotification('HIDE_FLIGHTS');
+        }
+
+        // MMM-voice sends notification to MMM-FlightsAbove to SHOW
+        else if (notification === 'SHOW_FLIGHTS') {
+             this.sendNotification('SHOW_FLIGHTS');
+        }
+
+    // MMM-voice sends notification to MMM-Fortune to HIDE
+        else if (notification === 'HIDE_FORTUNE') {
+             this.sendNotification('HIDE_FORTUNE');
+        }
+
+        // MMM-voice sends notification to MMM-Fortune to SHOW
+        else if (notification === 'SHOW_FORTUNE') {
+             this.sendNotification('SHOW_FORTUNE');
+        }
+
+    // MMM-voice sends notification to MMM-JEOPARDY to HIDE
+        else if (notification === 'HIDE_JEOPARDY') {
+             this.sendNotification('HIDE_JEOPARDY');
+        }
+
+        // MMM-voice sends notification to MMM-JEOPARDY to SHOW
+        else if (notification === 'SHOW_JEOPARDY') {
+             this.sendNotification('SHOW_JEOPARDY');
+        }
+
+    // MMM-voice sends notification to MMM-LICE to HIDE
+        else if (notification === 'HIDE_LICE') {
+             this.sendNotification('HIDE_LICE');
+        }
+
+        // MMM-voice sends notification to MMM-LICE to SHOW
+        else if (notification === 'SHOW_LICE') {
+             this.sendNotification('SHOW_LICE');
+        }
+
+    // MMM-voice sends notification to MMM-URHere to HIDE
+        else if (notification === 'HIDE_LOCATION') {
+             this.sendNotification('HIDE_LOCATION');
+        }
+
+        // MMM-voice sends notification to MMM-URHere to SHOW
+        else if (notification === 'SHOW_LOCATION') {
+             this.sendNotification('SHOW_LOCATION');
+        }
+
+    // MMM-voice sends notification to MMM-Lottery to HIDE
+        else if (notification === 'HIDE_LOTTERY') {
+             this.sendNotification('HIDE_LOTTERY');
+        }
+
+        // MMM-voice sends notification to MMM-Lottery to SHOW
+        else if (notification === 'SHOW_LOTTERY') {
+             this.sendNotification('SHOW_LOTTERY');
+        }
+
+
+        // MMM-voice sends notification to MMM-EasyPix to HIDE
+        else if (notification === 'HIDE_LUCY') {
+             this.sendNotification('HIDE_LUCY');
+        }
+
+        // MMM-voice sends notification to MMM-EasyPix to SHOW
+        else if (notification === 'SHOW_LUCY') {
+             this.sendNotification('SHOW_LUCY');
+        }
+
+        // MMM-voice sends notification to MMM-Lunartic to HIDE
+        else if (notification === 'HIDE_MOON') {
+             this.sendNotification('HIDE_MOON');
+        }
+
+        // MMM-voice sends notification to MMM-Lunartic to SHOW
+        else if (notification === 'SHOW_MOON') {
+             this.sendNotification('SHOW_MOON');
+        }
+
+    // MMM-voice sends notification to MMM-NASA to HIDE
+        else if (notification === 'HIDE_NASA') {
+             this.sendNotification('HIDE_NASA');
+        }
+
+        // MMM-voice sends notification to MMM-NASA to SHOW
+        else if (notification === 'SHOW_NASA') {
+             this.sendNotification('SHOW_NASA');
+        }
+
+    // MMM-voice sends notification to MMM-NEO to HIDE
+        else if (notification === 'HIDE_NEO') {
+             this.sendNotification('HIDE_NEO');
+        }
+
+        // MMM-voice sends notification to MMM-NEO to SHOW
+        else if (notification === 'SHOW_NEO') {
+             this.sendNotification('SHOW_NEO');
+        }
+
+    // MMM-voice sends notification to newsfeed to HIDE
+        else if (notification === 'HIDE_NEWS') {
+             this.sendNotification('HIDE_NEWS');
+        }
+
+        // MMM-voice sends notification to newsfeed to SHOW
+        else if (notification === 'SHOW_NEWS') {
+             this.sendNotification('SHOW_NEWS');
+        }
+
+    // MMM-voice sends notification to MMM-PETFINDER to HIDE
+        else if (notification === 'HIDE_PETFINDER') {
+             this.sendNotification('HIDE_PETFINDER');
+        }
+
+        // MMM-voice sends notification to MMM-PETFINDER to SHOW
+        else if (notification === 'SHOW_PETFINDER') {
+             this.sendNotification('SHOW_PETFINDER');
+        }
+
+         // MMM-voice sends notification to MMM-FMI to HIDE
+        else if (notification === 'HIDE_PHONE') {
+             this.sendNotification('HIDE_PHONE');
+        }
+
+        // MMM-voice sends notification to MMM-FMI to SHOW
+        else if (notification === 'SHOW_PHONE') {
+             this.sendNotification('SHOW_PHONE');
+        }
+
+     // MMM-voice sends notification to MMM-ImageSlideshow to HIDE
+        else if (notification === 'HIDE_PICTURES') {
+             this.sendNotification('HIDE_PICTURES');
+        }
+
+        // MMM-voice sends notification to MMM-ImageSlideshow to SHOW
+        else if (notification === 'SHOW_PICTURES') {
+             this.sendNotification('SHOW_PICTURES');
+        }
+
+        // MMM-voice sends notification to MMM-PilotWX to HIDE
+        else if (notification === 'HIDE_PILOTS') {
+             this.sendNotification('HIDE_PILOTS');
+        }
+
+        // MMM-voice sends notification to MMM-PilotWX to SHOW
+        else if (notification === 'SHOW_PILOTS') {
+             this.sendNotification('SHOW_PILOTS');
+        }
+
+    // MMM-voice sends notification to MMM-AfterShip to HIDE
+        else if (notification === 'HIDE_SHIPPING') {
+             this.sendNotification('HIDE_SHIPPING');
+        }
+
+        // MMM-voice sends notification to MMM-AfterShip to SHOW
+        else if (notification === 'SHOW_SHIPPING') {
+             this.sendNotification('SHOW_SHIPPING');
+        }
+
+    // MMM-voice sends notification to MMM-ISS to HIDE
+        else if (notification === 'HIDE_STATION') {
+             this.sendNotification('HIDE_STATION');
+        }
+
+        // MMM-voice sends notification to MMM-ISS to SHOW
+        else if (notification === 'SHOW_STATION') {
+             this.sendNotification('SHOW_STATION');
+        }
+
+    // MMM-voice sends notification to MMM-PC-Stats to HIDE
+        else if (notification === 'HIDE_STATS') {
+             this.sendNotification('HIDE_STATS');
+        }
+
+        // MMM-voice sends notification to MMM-PC-Stats to SHOW
+        else if (notification === 'SHOW_STATS') {
+             this.sendNotification('SHOW_STATS');
+        }
+
+    // MMM-voice sends notification to MMM-Sudoku to HIDE
+        else if (notification === 'HIDE_SUDOKU') {
+             this.sendNotification('HIDE_SUDOKU');
+        }
+
+        // MMM-voice sends notification to MMM-Sudoku to SHOW
+        else if (notification === 'SHOW_SUDOKU') {
+             this.sendNotification('SHOW_SUDOKU');
+        }
+
+    // MMM-voice sends notification to MMM-SunRiseSet to HIDE
+        else if (notification === 'HIDE_SUNRISE') {
+             this.sendNotification('HIDE_SUNRISE');
+        }
+
+        // MMM-voice sends notification to MMM-SunRiseSet to SHOW
+        else if (notification === 'SHOW_SUNRISE') {
+             this.sendNotification('SHOW_SUNRISE');
+        }
+
+     // MMM-voice sends notification to MMM-SORT to HIDE
+        else if (notification === 'HIDE_TIDES') {
+             this.sendNotification('HIDE_TIDES');
+        }
+
+        // MMM-voice sends notification to MMM-SORT to SHOW
+        else if (notification === 'SHOW_TIDES') {
+             this.sendNotification('SHOW_TIDES');
+        }
+
+    // MMM-voice sends notification to MMM-EventHorizon to HIDE
+        else if (notification === 'HIDE_TIMER') {
+             this.sendNotification('HIDE_TIMER');
+        }
+
+        // MMM-voice sends notification to MMM-EventHorizon to SHOW
+        else if (notification === 'SHOW_TIMER') {
+             this.sendNotification('SHOW_TIMER');
+        }
+
+        // MMM-voice sends notification to MMM-ATM to HIDE
+        else if (notification === 'HIDE_TRIVIA') {
+             this.sendNotification('HIDE_TRIVIA');
+        }
+
+        // MMM-voice sends notification to MMM-ATM to SHOW
+        else if (notification === 'SHOW_TRIVIA') {
+             this.sendNotification('SHOW_TRIVIA');
+        }
+
+     // MMM-voice sends notification to MMM-VOICE to HIDE
+        else if (notification === 'HIDE_VOICE') {
+             this.hide(1000);
+        }
+
+        // MMM-voice sends notification to MMM-VOICE to SHOW
+        else if (notification === 'SHOW_VOICE') {
+             this.show(1000);
+        }
+
+        // MMM-voice sends notification to MMM-WEATHER to HIDE
+        else if (notification === 'HIDE_WEATHER') {
+             this.sendNotification('HIDE_WEATHER');
+        }
+
+        // MMM-voice sends notification to MMM-WEATHER to SHOW
+        else if (notification === 'SHOW_WEATHER') {
+             this.sendNotification('SHOW_WEATHER');
+        }
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+        else if (notification === 'DEBUG') {
             this.debugInformation = payload;
         }
+        Log.error("command updatedom")
         this.updateDom(300);
     },
 
@@ -287,21 +961,24 @@ Module.register('MMM-voice', {
      */
     appendHelp(appendTo) {
         const title = document.createElement('h1');
-        title.classList.add('medium');
+        title.classList.add('xsmall'); // was medium @ Mykle
         title.innerHTML = `${this.name} - ${this.translate('COMMAND_LIST')}`;
         appendTo.appendChild(title);
 
         const mode = document.createElement('div');
+    mode.classList.add('xsmall'); // added @ Mykle
         mode.innerHTML = `${this.translate('MODE')}: ${this.voice.mode}`;
         appendTo.appendChild(mode);
 
         const listLabel = document.createElement('div');
+    listLabel.classList.add('xsmall'); // added @ Mykle
         listLabel.innerHTML = `${this.translate('VOICE_COMMANDS')}:`;
         appendTo.appendChild(listLabel);
 
         const list = document.createElement('ul');
         for (let i = 0; i < this.voice.sentences.length; i += 1) {
             const item = document.createElement('li');
+      list.classList.add('xsmall'); // added @ Mykle
             item.innerHTML = this.voice.sentences[i];
             list.appendChild(item);
         }
