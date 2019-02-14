@@ -187,7 +187,7 @@ Module.register('MMM-voice', {
 // add handlers for notifications from other modules
         // did some other module  say they were done with the mic
         } else if(notification === 'HOTWORD_RESUME'){
-            Log.error("HOTWORD_RESUME received from "+sender)
+            Log.error("HOTWORD_RESUME received from "+(sender!=null?sender.name:"unknown"))
             Log.error("HOTWORD_RESUME timeout value = "+voice_self.timeout)
             if( voice_self.timeout!=null){
               Log.error("HOTWORD_RESUME clearing timeout handle")
@@ -201,7 +201,7 @@ Module.register('MMM-voice', {
         // did some other module request the mic?
         // this could also be a confirm using the mic from the other module
         } else if(notification === 'HOTWORD_PAUSE'){ 
-            Log.error("HOTWORD_PAUSE received from "+sender)
+            Log.error("HOTWORD_PAUSE received from "+(sender!=null?sender.name:"unknown"))
             Log.error("HOTWORD_PAUSE timeout value = "+voice_self.timeout)
             if( voice_self.timeout!=null){
               Log.error("HOTWORD_ PAUSE clearing timeout handle")
