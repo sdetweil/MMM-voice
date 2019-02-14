@@ -43,7 +43,7 @@ Module.register('MMM-voice', {
     help: false,
     
     timeout: null,
-    timeoutSeconds: 10,
+    timeoutSeconds: 20,
 
     /**
      * @member {Object} voice - Defines the default mode and commands of this module.
@@ -177,7 +177,7 @@ Module.register('MMM-voice', {
      * @param {string} notification - Notification name
      * @param {*} payload - Detailed payload of the notification.
      */
-    notificationReceived(notification, payload) {
+    notificationReceived(notification, payload, sender) {
         if (notification === 'DOM_OBJECTS_CREATED') {
             this.sendSocketNotification('START', { config: this.config, modules: this.modules });
         } else if (notification === 'REGISTER_VOICE_MODULE') {
@@ -187,7 +187,10 @@ Module.register('MMM-voice', {
 // add handlers for notifications from other modules
         // did some other module  say they were done with the mic
         } else if(notification === 'HOTWORD_RESUME'){
+            Log.error("HOTWORD_RESUME received from "+sender)
+            Log.error("HOTWORD_RESUME timeout value = "+voice_self.timeout)
             if( voice_self.timeout!=null){
+              Log.error("HOTWORD_RESUME clearing timeout handle")
               clearTimeout( voice_self.timeout);
                voice_self.timeout=null;
             }
@@ -197,8 +200,11 @@ Module.register('MMM-voice', {
              voice_self.sendSocketNotification('RESUME_LISTENING');
         // did some other module request the mic?
         // this could also be a confirm using the mic from the other module
-        } else if(notification === 'HOTWORD_PAUSE'){  
+        } else if(notification === 'HOTWORD_PAUSE'){ 
+            Log.error("HOTWORD_PAUSE received from "+sender)
+            Log.error("HOTWORD_PAUSE timeout value = "+voice_self.timeout)
             if( voice_self.timeout!=null){
+              Log.error("HOTWORD_ PAUSE clearing timeout handle")
               clearTimeout( voice_self.timeout);
                voice_self.timeout=null;
             }        
@@ -236,7 +242,7 @@ Module.register('MMM-voice', {
 // tell other module to resume voice detection
             this.sendNotification('HOTWORD_RESUME')
             this.timeout=setTimeout(() => {                        // dummy code here for response from other module when done
-                    Log.log("sending socket notification to RESUME_LISTENING")
+                    Log.log("timeout sending socket notification to RESUME_LISTENING")
                     this.notificationReceived('HOTWORD_RESUME');
                 }, this.timeoutSeconds*1000);
         } else if (notification === 'VOICE') {
