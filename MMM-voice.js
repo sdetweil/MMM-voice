@@ -222,7 +222,6 @@ Module.register('MMM-voice', {
         voice.classList.add('small', 'align-left');
 
         const icon = document.createElement('i');
-        Log.error("getDom icon ="+this.icon+" pulse = "+this.pulsing)
         icon.classList.add('fa', this.icon, 'icon');
         if (this.pulsing) {
             icon.classList.add('pulse');
@@ -258,7 +257,6 @@ Module.register('MMM-voice', {
         }
 
         wrapper.appendChild(voice);
-Log.error("updateDom return")
         return wrapper;
     },
 
@@ -299,8 +297,8 @@ Log.error("updateDom return")
             }
              this.icon = 'fa-microphone';
              this.pulsing=false;
-             Log.error("resume updatedom")
-             this.updateDom();
+  //           Log.error("resume updatedom")
+             this.updateDom(100);
              this.sendSocketNotification('RESUME_LISTENING');
         // did some other module request the mic?
         // this could also be a confirm using the mic from the other module
@@ -314,7 +312,7 @@ Log.error("updateDom return")
             }        
              this.icon='fa-microphone-slash'
              this.pulsing=false;
-             Log.error("pause updatedom")
+             //Log.error("pause updatedom")
              this.updateDom(100);
             // if we send the suspend and already not listening, all is ok
              this.sendSocketNotification('SUSPEND_LISTENING');
@@ -355,15 +353,12 @@ Log.error("updateDom return")
      */
     socketNotificationReceived(notification, payload) {
         if (notification === 'READY') {
-         Log.error("received Ready notification")
             this.icon = 'fa-microphone';
             this.mode = this.translate('NO_MODE'); // <-- was 'NO_MODE' @Mykle
             this.pulsing = false;
         } else if (notification === 'LISTENING') {
-          Log.error("received Listening notification")
             this.pulsing = true;
         } else if (notification === 'SLEEPING') {
-          Log.error("received Sleeping notification")
             this.pulsing = false;
         } else if (notification === 'ERROR') {
             this.mode = notification;
@@ -372,16 +367,14 @@ Log.error("updateDom return")
             this.icon='fa-microphone-slash'
             this.pulsing = false;
             this.debugInformation=" ";
-            Log.error("suspend updatedom")
             this.updateDom(100);
 // tell other module to resume voice detection
             this.timeout=setTimeout(() => {                        // dummy code here for response from other module when done
-                    Log.log("timeout sending socket notification to RESUME_LISTENING")
+                    Log.log("mic suspend timeout,  sending socket notification to RESUME_LISTENING")
                     this.notificationReceived('HOTWORD_RESUME');
                 }, this.timeoutSeconds*1000);         
             this.sendNotification('ASSISTANT_ACTIVATE')
-        } else if (notification === 'VOICE') {
-          Log.error("received Voice notification")
+        } else if (notification === 'VOICE') {        
             for (let i = 0; i < this.modules.length; i += 1) {
                 if (payload.mode === this.modules[i].mode) {
                     if (this.mode !== payload.mode) {
@@ -949,7 +942,6 @@ Log.error("updateDom return")
         else if (notification === 'DEBUG') {
             this.debugInformation = payload;
         }
-        Log.error("command updatedom")
         this.updateDom(300);
     },
 
